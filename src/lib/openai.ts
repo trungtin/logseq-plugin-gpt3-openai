@@ -193,6 +193,11 @@ export async function openAI(
   }
 }
 
+const KNOWN_COMPLETION_ENGINES = [
+  'gpt-3.5-turbo-instruct',
+  'text-davinci-003',
+];
+
 export async function openAIWithStream(
   input: string,
   openAiOptions: OpenAIOptions,
@@ -202,8 +207,12 @@ export async function openAIWithStream(
   const options = { ...OpenAIDefaults(openAiOptions.apiKey), ...openAiOptions };
   const engine = options.completionEngine!;
 
+  const isChatModel =
+    KNOWN_COMPLETION_ENGINES.indexOf(engine) == -1 &&
+    (engine.startsWith("gpt-3.5") || engine.startsWith("gpt-4"));
+
   try {
-    if (engine.startsWith("gpt-3.5") || engine.startsWith("gpt-4")) {
+    if (isChatModel) {
       const inputMessages: ChatCompletionRequestMessage[] = [{ role: "user", content: input }];
       if (openAiOptions.chatPrompt && openAiOptions.chatPrompt.length > 0) {
         inputMessages.unshift({ role: "system", content: openAiOptions.chatPrompt });
