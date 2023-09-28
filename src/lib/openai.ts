@@ -308,7 +308,7 @@ export async function openAIWithStream(
           }).then((response) => {
             if (response.ok && response.body) {
               const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-              let result = ""
+              let result = "", uncompletedChunk = ""
               const readStream = (): any =>
                 reader.read().then(({
                                       value,
@@ -320,14 +320,22 @@ export async function openAIWithStream(
                     return Promise.resolve({ choices: [{ text: result }]});
                   }
 
-                  const data = getDataFromStreamValue(value);
-                  if (!data || !data[0]) {
-                    return readStream();
-                  }
+                  value = uncompletedChunk + value
+                  uncompletedChunk = ""
 
+                  const data = getDataFromStreamValue(value);
+                  
                   let res = ""
                   for (let i = 0; i < data.length; i++) {
-                    res += data[i].choices[0]?.text || ""
+                    if (typeof data[i] === 'string') {
+                      uncompletedChunk += data[i]
+                    } else {
+                      res += data[i]?.choices[0]?.text || ""
+                    }
+                  }
+                  if (!result) {
+                    // remove the first \n\n from the result
+                    res = res.trimStart()
                   }
                   result += res
                   onContent(res)
@@ -369,7 +377,8 @@ function getDataFromStreamValue(value: string) {
       try{
         return JSON.parse(match)
       } catch(e) {
-        return null
+        // return uncompleted chunk if it's not a valid json
+        return match
       }
     });
 }
