@@ -1,4 +1,4 @@
-import { IHookEvent } from "@logseq/libs/dist/LSPlugin.user";
+import { BlockEntity, IHookEvent } from "@logseq/libs/dist/LSPlugin.user";
 import { getAudioFile, getPageContentFromBlock, saveDalleImage } from "./logseq";
 import { OpenAIOptions, dallE, whisper, openAIWithStream } from "./openai";
 import { getOpenaiSettings } from "./settings";
@@ -72,7 +72,35 @@ export async function runGptBlock(b: IHookEvent) {
     return;
   }
 
-  if (currentBlock.content.trim().length === 0) {
+  let content = '';
+  let block: typeof currentBlock | null = currentBlock
+
+  // collect content from all upper blocks (parent, previous siblings of parent, grandparent, ...)
+  // till we hit the first level block (previous siblings of first level block is not included)
+  while (block) {
+    if (block.content) {
+      content = block.content + '\n' + content;
+    }
+    const isPageRoot = block.parent.id === block.page.id;
+
+    // previous siblings of first level block is not considered
+    if (isPageRoot) {
+      break;
+    }
+    const previousBlock: BlockEntity | null = await logseq.Editor.getPreviousSiblingBlock(block.uuid);
+
+    if (previousBlock) {
+      block = previousBlock;
+    } else {
+      block = await logseq.Editor.getBlock(block.parent.id);
+    }
+  }
+
+  const page = await logseq.Editor.getPage(currentBlock.page.id);
+
+  content = ((page?.name ?? '') + '\n' + content).trim()
+
+  if (content.length === 0) {
     logseq.App.showMsg("Empty Content", "warning");
     console.warn("Blank page");
     return;
@@ -88,7 +116,7 @@ export async function runGptBlock(b: IHookEvent) {
       result = openAISettings.injectPrefix + result;
     }
 
-    await openAIWithStream(currentBlock.content, openAISettings,  async (content: string) => {
+    await openAIWithStream(content, openAISettings,  async (content: string) => {
       result += content || "";
       if(null != insertBlock) {
          await logseq.Editor.updateBlock(insertBlock.uuid, result);
