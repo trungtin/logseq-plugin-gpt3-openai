@@ -1,5 +1,9 @@
 import { BlockEntity, IHookEvent } from "@logseq/libs/dist/LSPlugin.user";
-import { getAudioFile, getPageContentFromBlock, saveDalleImage } from "./logseq";
+import {
+  getAudioFile,
+  getPageContentFromBlock,
+  saveDalleImage,
+} from "./logseq";
 import { OpenAIOptions, dallE, whisper, openAIWithStream } from "./openai";
 import { getOpenaiSettings } from "./settings";
 
@@ -72,14 +76,14 @@ export async function runGptBlock(b: IHookEvent) {
     return;
   }
 
-  let content = '';
-  let block: typeof currentBlock | null = currentBlock
+  let content = "";
+  let block: typeof currentBlock | null = currentBlock;
 
   // collect content from all upper blocks (parent, previous siblings of parent, grandparent, ...)
   // till we hit the first level block (previous siblings of first level block is not included)
   while (block) {
     if (block.content) {
-      content = block.content + '\n' + content;
+      content = block.content + "\n" + content;
     }
     const isPageRoot = block.parent.id === block.page.id;
 
@@ -87,7 +91,8 @@ export async function runGptBlock(b: IHookEvent) {
     if (isPageRoot) {
       break;
     }
-    const previousBlock: BlockEntity | null = await logseq.Editor.getPreviousSiblingBlock(block.uuid);
+    const previousBlock: BlockEntity | null =
+      await logseq.Editor.getPreviousSiblingBlock(block.uuid);
 
     if (previousBlock) {
       block = previousBlock;
@@ -98,7 +103,7 @@ export async function runGptBlock(b: IHookEvent) {
 
   const page = await logseq.Editor.getPage(currentBlock.page.id);
 
-  content = ((page?.name ?? '') + '\n' + content).trim()
+  content = ((page?.name ?? "") + "\n" + content).trim();
 
   if (content.length === 0) {
     logseq.App.showMsg("Empty Content", "warning");
@@ -108,23 +113,32 @@ export async function runGptBlock(b: IHookEvent) {
 
   try {
     let result = "";
-    const insertBlock = await logseq.Editor.insertBlock(currentBlock.uuid, result, {
-      sibling: false,
-    });
+    const insertBlock = await logseq.Editor.insertBlock(
+      currentBlock.uuid,
+      result,
+      {
+        sibling: false,
+      }
+    );
 
-    if(openAISettings.injectPrefix && result.length == 0) {
+    if (openAISettings.injectPrefix && result.length == 0) {
       result = openAISettings.injectPrefix + result;
     }
 
-    await openAIWithStream(content, openAISettings,  async (content: string) => {
-      result += content || "";
-      if(null != insertBlock) {
-         await logseq.Editor.updateBlock(insertBlock.uuid, result);
-      }
-    }, () => {});
+    await openAIWithStream(
+      content,
+      openAISettings,
+      async (content: string) => {
+        result += content || "";
+        if (null != insertBlock) {
+          await logseq.Editor.updateBlock(insertBlock.uuid, result);
+        }
+      },
+      () => {}
+    );
 
     if (!result) {
-      logseq.App.showMsg("No OpenAI content" , "warning");
+      logseq.App.showMsg("No OpenAI content", "warning");
       return;
     }
   } catch (e: any) {
@@ -157,23 +171,30 @@ export async function runGptPage(b: IHookEvent) {
 
   try {
     let result = "";
-    const insertBlock = await logseq.Editor.appendBlockInPage(page.uuid, result);
+    const insertBlock = await logseq.Editor.appendBlockInPage(
+      page.uuid,
+      result
+    );
 
     if (openAISettings.injectPrefix && result.length == 0) {
       result = openAISettings.injectPrefix + result;
     }
 
-    await openAIWithStream(pageContents, openAISettings,  async (content: string) => {
-      result += content || "";
-      if(null != insertBlock) {
-        await logseq.Editor.updateBlock(insertBlock.uuid, result);
-      }
-    }, () => {});
+    await openAIWithStream(
+      pageContents,
+      openAISettings,
+      async (content: string) => {
+        result += content || "";
+        if (null != insertBlock) {
+          await logseq.Editor.updateBlock(insertBlock.uuid, result);
+        }
+      },
+      () => {}
+    );
     if (!result) {
-      logseq.App.showMsg("No OpenAI content" , "warning");
+      logseq.App.showMsg("No OpenAI content", "warning");
       return;
     }
-
   } catch (e: any) {
     handleOpenAIError(e);
   }

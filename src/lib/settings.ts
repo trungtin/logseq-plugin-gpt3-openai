@@ -26,14 +26,17 @@ export const settingsSchema: SettingSchemaDesc[] = [
     type: "string",
     default: "http://api.openai.com/v1/",
     title: "OpenAI API Completion Endpoint",
-    description: "The endpoint to use for OpenAI API completion requests. You shouldn't need to change this."
+    description:
+      "The endpoint to use for OpenAI API completion requests. You shouldn't need to change this.",
   },
   {
     key: "chatPrompt",
     type: "string",
-    default: "Do not refer to yourself in your answers. Do not say as an AI language model...",
+    default:
+      "Do not refer to yourself in your answers. Do not say as an AI language model...",
     title: "OpenAI Chat Prompt",
-    description: "Initial message that tells ChatGPT how to answer. Only used for gpt-3.5. See https://platform.openai.com/docs/guides/chat/introduction for more info.",
+    description:
+      "Initial message that tells ChatGPT how to answer. Only used for gpt-3.5. See https://platform.openai.com/docs/guides/chat/introduction for more info.",
   },
   {
     key: "openAITemperature",
@@ -41,7 +44,7 @@ export const settingsSchema: SettingSchemaDesc[] = [
     default: 1.0,
     title: "OpenAI Temperature",
     description:
-      "The temperature controls how much randomness is in the output.<br/>"+
+      "The temperature controls how much randomness is in the output.<br/>" +
       "You can set a different temperature in your own prompt templates by adding a 'prompt-template' property to the block.",
   },
   {
@@ -73,14 +76,14 @@ export const settingsSchema: SettingSchemaDesc[] = [
     type: "string",
     default: "mod+j",
     title: "Keyboard Shortcut for /gpt-block",
-    description: ""
+    description: "",
   },
   {
     key: "popupShortcut",
     type: "string",
     default: "mod+g",
     title: "Keyboard Shortcut for /gpt popup",
-    description: ""
+    description: "",
   },
 ];
 
