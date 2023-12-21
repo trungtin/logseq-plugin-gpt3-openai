@@ -58,7 +58,7 @@ const retryOptions = {
 
 export async function whisper(
   file: File,
-  openAiOptions: OpenAIOptions
+  openAiOptions: OpenAIOptions,
 ): Promise<string> {
   const apiKey = openAiOptions.apiKey;
   const baseUrl = openAiOptions.completionEndpoint
@@ -81,7 +81,7 @@ export async function whisper(
         },
         body: formData,
       }),
-    retryOptions
+    retryOptions,
   );
 
   // Check if the response status is OK
@@ -96,7 +96,7 @@ export async function whisper(
 
 export async function dallE(
   prompt: string,
-  openAiOptions: OpenAIOptions
+  openAiOptions: OpenAIOptions,
 ): Promise<string | undefined> {
   const options = { ...OpenAIDefaults(openAiOptions.apiKey), ...openAiOptions };
 
@@ -116,14 +116,14 @@ export async function dallE(
         n: 1,
         size: imageSizeRequest,
       }),
-    retryOptions
+    retryOptions,
   );
   return response.data.data[0].url;
 }
 
 export async function openAI(
   input: string,
-  openAiOptions: OpenAIOptions
+  openAiOptions: OpenAIOptions,
 ): Promise<string | null> {
   const options = { ...OpenAIDefaults(openAiOptions.apiKey), ...openAiOptions };
   const engine = options.completionEngine!;
@@ -156,7 +156,7 @@ export async function openAI(
             presence_penalty: 0,
             model: engine,
           }),
-        retryOptions
+        retryOptions,
       );
       const choices = response.data.choices;
       if (
@@ -182,7 +182,7 @@ export async function openAI(
             presence_penalty: 0,
             model: engine,
           }),
-        retryOptions
+        retryOptions,
       );
       const choices = response.data.choices;
       if (
@@ -208,11 +208,17 @@ export async function openAI(
 
 const KNOWN_COMPLETION_ENGINES = ["gpt-3.5-turbo-instruct", "text-davinci-003"];
 
+let generationController = new AbortController();
+export function stopGeneration() {
+  generationController.abort();
+  generationController = new AbortController();
+}
+
 export async function openAIWithStream(
   input: string,
   openAiOptions: OpenAIOptions,
   onContent: (content: string) => void,
-  onStop: () => void
+  onStop: () => void,
 ): Promise<string | null> {
   const options = { ...OpenAIDefaults(openAiOptions.apiKey), ...openAiOptions };
   const engine = options.completionEngine!;
@@ -252,6 +258,7 @@ export async function openAIWithStream(
               "Content-Type": "application/json",
               Accept: "text/event-stream",
             },
+            signal: generationController.signal,
           }).then((response) => {
             if (response.ok && response.body) {
               const reader = response.body
@@ -286,7 +293,7 @@ export async function openAIWithStream(
               return Promise.reject(response);
             }
           }),
-        retryOptions
+        retryOptions,
       );
       const choices = (response as CreateChatCompletionResponse)?.choices;
       if (
@@ -321,6 +328,7 @@ export async function openAIWithStream(
               "Content-Type": "application/json",
               Accept: "text/event-stream",
             },
+            signal: generationController.signal,
           }).then((response) => {
             if (response.ok && response.body) {
               const reader = response.body
@@ -362,7 +370,7 @@ export async function openAIWithStream(
               return Promise.reject(response);
             }
           }),
-        retryOptions
+        retryOptions,
       );
       const choices = (response as CreateCompletionResponse)?.choices;
       if (
@@ -391,7 +399,7 @@ function getDataFromStreamValue(value: string) {
   return matches
     .filter(
       (content) =>
-        content.trim().length > 0 && !content.trim().includes("[DONE]")
+        content.trim().length > 0 && !content.trim().includes("[DONE]"),
     )
     .map((match) => {
       try {

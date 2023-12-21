@@ -1,19 +1,19 @@
-import "./ui/style.css";
 import "@logseq/libs";
-import { openAIWithStream } from "./lib/openai";
+import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
-import { Command, LogseqAI } from "./ui/LogseqAI";
-import { loadUserCommands, loadBuiltInCommands } from "./lib/prompts";
-import { getOpenaiSettings, settingsSchema } from "./lib/settings";
+import { useImmer } from "use-immer";
+import { openAIWithStream, stopGeneration } from "./lib/openai";
+import { loadBuiltInCommands, loadUserCommands } from "./lib/prompts";
 import {
   runDalleBlock,
   runGptBlock,
   runGptPage,
   runWhisper,
 } from "./lib/rawCommands";
-import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
-import { useImmer } from "use-immer";
+import { getOpenaiSettings, settingsSchema } from "./lib/settings";
+import { Command, LogseqAI } from "./ui/LogseqAI";
+import "./ui/style.css";
 
 logseq.useSettingsSchema(settingsSchema);
 
@@ -22,7 +22,7 @@ async function main() {
   root.render(
     <React.StrictMode>
       <LogseqApp />
-    </React.StrictMode>
+    </React.StrictMode>,
   );
 
   function createModel() {
@@ -117,7 +117,7 @@ const LogseqApp = () => {
           } else if (!activeText && !currentPage) {
             logseq.App.showMsg(
               "Put cursor in block or navigate to specific page to use keyboard shortcut",
-              "warning"
+              "warning",
             );
             return;
           } else if (activeText && currentBlock) {
@@ -135,7 +135,7 @@ const LogseqApp = () => {
             });
           }
           openUI();
-        }
+        },
       );
     }
   }, []);
@@ -178,7 +178,16 @@ const LogseqApp = () => {
     if (logseq.settings!["shortcutBlock"]) {
       logseq.App.registerCommandShortcut(
         { binding: logseq.settings!["shortcutBlock"] },
-        runGptBlock
+        runGptBlock,
+      );
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (logseq.settings!["abortGenerationShortcut"]) {
+      logseq.App.registerCommandShortcut(
+        { binding: logseq.settings!["abortGenerationShortcut"] },
+        stopGeneration,
       );
     }
   }, []);
@@ -187,7 +196,7 @@ const LogseqApp = () => {
 
   const handleCommand = async (
     command: Command,
-    onContent: (content: string) => void
+    onContent: (content: string) => void,
   ): Promise<string> => {
     let inputText;
     if (appState.selection.type === "singleBlockSelected") {
@@ -207,7 +216,7 @@ const LogseqApp = () => {
       command.prompt + inputText,
       openAISettings,
       onContent,
-      () => {}
+      () => {},
     );
     if (response) {
       return response;
@@ -261,7 +270,7 @@ const LogseqApp = () => {
       if (appState.selection.blocks.length > 1) {
         const remainingBlocks = appState.selection.blocks.slice(1);
         const blocksToRemove = remainingBlocks.map((b) =>
-          logseq.Editor.removeBlock(b.uuid)
+          logseq.Editor.removeBlock(b.uuid),
         );
         await Promise.all(blocksToRemove);
       }

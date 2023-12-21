@@ -32,6 +32,7 @@ export const settingsSchema: SettingSchemaDesc[] = [
   {
     key: "chatPrompt",
     type: "string",
+    inputAs: 'textarea',
     default:
       "Do not refer to yourself in your answers. Do not say as an AI language model...",
     title: "OpenAI Chat Prompt",
@@ -85,6 +86,13 @@ export const settingsSchema: SettingSchemaDesc[] = [
     title: "Keyboard Shortcut for /gpt popup",
     description: "",
   },
+  {
+    key: "abortGenerationShortcut",
+    type: "string",
+    default: "mod+esc",
+    title: "Keyboard Shortcut to abort generation",
+    description: ""
+  }
 ];
 
 function unescapeNewlines(s: string) {

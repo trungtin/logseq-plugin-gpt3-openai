@@ -8,6 +8,11 @@ import { OpenAIOptions, dallE, whisper, openAIWithStream } from "./openai";
 import { getOpenaiSettings } from "./settings";
 
 function handleOpenAIError(e: any) {
+  if (e.name === "AbortError") {
+    console.info("OpenAI request aborted.");
+    logseq.UI.showMsg("OpenAI Request Aborted", "info");
+    return;
+  }
   if (
     !e.response ||
     !e.response.status ||
